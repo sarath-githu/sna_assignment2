@@ -1,0 +1,64 @@
+import itertools
+
+def find_cliques(graph, k):
+    cliques = []
+    nodes = set(graph.keys())
+    for node in nodes:
+        neighbors = graph[node]
+        candidates = set(neighbors).intersection(nodes)
+        for clique in itertools.combinations(candidates, k-1):
+            if all(graph[v1].intersection(graph[v2]) for v1, v2 in itertools.combinations(clique, 2)):
+                cliques.append(set(clique).union({node}))
+    return cliques
+
+def build_percolation_network(cliques, k):
+    percolation_network = {}
+    for i, clique in enumerate(cliques):
+        percolation_network[i] = set()
+        for j, other_clique in enumerate(cliques[i+1:], start=i+1):
+            if len(clique.intersection(other_clique)) >= k-1:
+                percolation_network[i].add(j)
+                percolation_network[j].add(i)
+    return percolation_network
+
+def detect_communities(percolation_network):
+    communities = []
+    visited = set()
+    for node in percolation_network.keys():
+        if node not in visited:
+            community = set()
+            stack = [node]
+            while stack:
+                current_node = stack.pop()
+                community.add(current_node)
+                visited.add(current_node)
+                stack.extend(percolation_network[current_node] - visited)
+            communities.append(community)
+    return communities
+
+# Example usage
+graph = {
+    'A': {'B', 'C', 'D'},
+    'B': {'A', 'C'},
+    'C': {'A', 'B', 'D'},
+    'D': {'A', 'C', 'E'},
+    'E': {'D', 'F'},
+    'F': {'E'},
+    'G': {'H'},
+    'H': {'G'}
+}
+
+k = 3
+
+# Step 1: Find cliques of size k
+cliques = find_cliques(graph, k)
+
+# Step 2: Build clique percolation network
+percolation_network = build_percolation_network(cliques, k)
+
+# Step 3: Detect communities
+communities = detect_communities(percolation_network)
+
+# Print the communities
+for i, community in enumerate(communities, start=1):
+    print(f"Community {i}: {community}")
